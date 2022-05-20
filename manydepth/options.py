@@ -15,10 +15,21 @@ class MonodepthOptions:
         self.parser = argparse.ArgumentParser(description="ManyDepth options")
 
         # PATHS
-        self.parser.add_argument("--data_path",
+        self.parser.add_argument("--data_path_train",
                                  type=str,
                                  help="path to the training data",
                                  default=os.path.join(file_dir, "kitti_data"))
+        
+        self.parser.add_argument("--data_path_val",
+                                 type=str,
+                                 help="path to the training data",
+                                 default=os.path.join(file_dir, "kitti_data"))
+
+        self.parser.add_argument("--eval_season_output_dir",
+                                 type=str,
+                                 help="path to the training data",
+                                 default="")
+        
         self.parser.add_argument("--log_dir",
                                  type=str,
                                  help="log directory",
@@ -33,7 +44,7 @@ class MonodepthOptions:
                                  type=str,
                                  help="which training split to use",
                                  choices=["eigen_zhou", "eigen_full", "odom", "benchmark",
-                                          "cityscapes_preprocessed"],
+                                          "cityscapes_preprocessed","eigen_simple","SeasonDepth"],
                                  default="eigen_zhou")
         self.parser.add_argument("--num_layers",
                                  type=int,
@@ -55,7 +66,7 @@ class MonodepthOptions:
                                  help="dataset to train on",
                                  default="kitti",
                                  choices=["kitti", "kitti_odom", "kitti_depth", "kitti_test",
-                                          "cityscapes_preprocessed"])
+                                          "cityscapes_preprocessed","season_depth"])
         self.parser.add_argument("--png",
                                  help="if set, trains from raw KITTI png files (instead of jpgs)",
                                  action="store_true")
@@ -216,7 +227,7 @@ class MonodepthOptions:
                                  type=str,
                                  default="eigen",
                                  choices=["eigen", "eigen_benchmark", "benchmark", "odom_9",
-                                          "odom_10", "cityscapes"],
+                                          "odom_10", "cityscapes","eigen_simple","SeasonDepth"],
                                  help="which split to run eval on")
         self.parser.add_argument("--save_pred_disps",
                                  help="if set saves predicted disparities",

@@ -21,8 +21,8 @@ from tensorboardX import SummaryWriter
 
 import json
 
-from .utils import readlines, sec_to_hm_str
-from .layers import SSIM, BackprojectDepth, Project3D, transformation_from_parameters, \
+from utils import readlines, sec_to_hm_str
+from layers import SSIM, BackprojectDepth, Project3D, transformation_from_parameters, \
     disp_to_depth, get_smooth_loss, compute_depth_errors
 
 from manydepth import datasets, networks
@@ -139,7 +139,9 @@ class Trainer:
         # DATA
         datasets_dict = {"kitti": datasets.KITTIRAWDataset,
                          "cityscapes_preprocessed": datasets.CityscapesPreprocessedDataset,
-                         "kitti_odom": datasets.KITTIOdomDataset}
+                         "kitti_odom": datasets.KITTIOdomDataset,
+                         "season_depth": datasets.SDDataset}
+        
         self.dataset = datasets_dict[self.opt.dataset]
 
         fpath = os.path.join("splits", self.opt.split, "{}_files.txt")
@@ -151,14 +153,14 @@ class Trainer:
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
         train_dataset = self.dataset(
-            self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
+            self.opt.data_path_train, train_filenames, self.opt.height, self.opt.width,
             frames_to_load, 4, is_train=True, img_ext=img_ext)
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True,
             worker_init_fn=seed_worker)
         val_dataset = self.dataset(
-            self.opt.data_path, val_filenames, self.opt.height, self.opt.width,
+            self.opt.data_path_val, val_filenames, self.opt.height, self.opt.width,
             frames_to_load, 4, is_train=False, img_ext=img_ext)
         self.val_loader = DataLoader(
             val_dataset, self.opt.batch_size, True,

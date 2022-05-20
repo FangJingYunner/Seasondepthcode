@@ -29,7 +29,7 @@ def pil_loader(path):
             return img.convert('RGB')
 
 
-class MonoDataset(data.Dataset):
+class MonoDatasetSeason(data.Dataset):
     """Superclass for monocular dataloaders
     """
     def __init__(self,
@@ -42,7 +42,7 @@ class MonoDataset(data.Dataset):
                  is_train=False,
                  img_ext='.jpg',
                  ):
-        super(MonoDataset, self).__init__()
+        super(MonoDatasetSeason, self).__init__()
 
         self.data_path = data_path
         self.filenames = filenames
@@ -60,7 +60,8 @@ class MonoDataset(data.Dataset):
         self.loader = pil_loader
         self.to_tensor = transforms.ToTensor()
 
-        self.EmptyImg = Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8))
+        self.savefilenames = self.readlines(os.path.join("splits", "SeasonDepth", "savetest_files.txt"))
+
         # We need to specify augmentations differently in newer versions of torchvision.
         # We first try the newer tuple version; if this fails we fall back to scalars
         try:
@@ -112,13 +113,13 @@ class MonoDataset(data.Dataset):
         return len(self.filenames)
 
     def load_intrinsics(self, side):
-        # if side == 'c0':
-        #     return self.Kc0.copy()
-        # if side == 'c1':
-        #     return self.Kc0.copy()
-        # else:
-        #     print("intrinsics_error")
-        return self.K.copy()
+        if side == 'c0':
+            return self.Kc0.copy()
+        if side == 'c1':
+            return self.Kc0.copy()
+        else:
+            print("intrinsics_error")
+        # return self.K.copy()
 
     def __getitem__(self, index):
         """Returns a single training item from the dataset as a dictionary.
@@ -142,12 +143,20 @@ class MonoDataset(data.Dataset):
             3       images resized to (self.width // 8, self.height // 8)
         """
         inputs = {}
-
+        
+        inputs[("filepath")] = self.savefilenames[index]
+        # print(os.path.join(self.data_path, self.savefilenames[index]))
+        
         do_color_aug = self.is_train and random.random() > 0.5
         do_flip = self.is_train and random.random() > 0.5
 
-        # img_path_front, frame_id, side = self.index_to_folder_and_frame_idx(index)
-        folder, frame_index, side = self.index_to_folder_and_frame_idx(index)
+        if "c0" in self.filenames[index]:
+            side = "c0"
+        elif "c1" in self.filenames[index]:
+            side = "c1"
+            
+        # side = self.index_to_folder_and_frame_idx(index)
+        # folder, frame_index, side = self.index_to_folder_and_frame_idx(index)
         poses = {}
         if type(self).__name__ in ["CityscapesPreprocessedDataset", "CityscapesEvalDataset"]:
             inputs.update(self.get_colors(folder, frame_index, side, do_flip))
@@ -159,14 +168,13 @@ class MonoDataset(data.Dataset):
                         folder, frame_index, other_side, do_flip)
                 else:
                     try:
-                        inputs[("color", i, -1)] = self.get_color(folder, frame_index + i, side, do_flip)
-                        # inputs[("color", i, -1)] = self.get_color(index,i,do_flip)
-
+                        # inputs[("color", i, -1)] = self.get_color(folder, frame_index + i, side, do_flip)
+                        inputs[("color", i, -1)] = self.get_color(index,i,do_flip)
                     except FileNotFoundError as e:
                         if i != 0:
                             # fill with dummy values
                             inputs[("color", i, -1)] = \
-                                self.EmptyImg
+                                Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8))
                             poses[i] = None
                         else:
                             print(self.data_path)
